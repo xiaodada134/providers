@@ -1,0 +1,219 @@
+From ddfab7bdf3b830ae8d19d64b4b07ebe8e18d14c9 Mon Sep 17 00:00:00 2001
+From: Xiao Shenwei <xiaoshenwei96@163.com>
+Date: Mon, 1 Feb 2021 14:56:57 +0800
+Subject: [PATCH v2 compass-ci] providers/libvirt: split domain.xml to some
+ common templates
+
+[why]
+libvirt can boot a vm based on a xml file named domain.xml.
+it contains many elements like os, device, cpu.
+
+to meet a requirements of a single module or a combination of
+multiple modules. split the domain.xml may be better.
+
+here are some scenarios:
+case 1:
+	the user provides a complete domain.xml file
+case 2:
+	the user only provides a cpu.xml template
+case 3:
+	the user provides cpu.xml and disk.xml or other templates
+
+Signed-off-by: Xiao Shenwei <xiaoshenwei96@163.com>
+---
+ providers/libvirt/templates/active.xml    |  3 +++
+ providers/libvirt/templates/clock.xml     |  5 +++++
+ providers/libvirt/templates/cpu.xml       |  3 +++
+ providers/libvirt/templates/devices.xml   |  3 +++
+ providers/libvirt/templates/disk.xml      |  7 +++++++
+ providers/libvirt/templates/domain.xml    | 10 ++++++++++
+ providers/libvirt/templates/emulator.xml  |  1 +
+ providers/libvirt/templates/interface.xml |  6 ++++++
+ providers/libvirt/templates/memory.xml    |  1 +
+ providers/libvirt/templates/name.xml      |  1 +
+ providers/libvirt/templates/options.yaml  | 23 +++++++++++++++++++++++
+ providers/libvirt/templates/os.xml        |  8 ++++++++
+ providers/libvirt/templates/seclabel.xml  |  4 ++++
+ providers/libvirt/templates/serial.xml    |  4 ++++
+ 14 files changed, 79 insertions(+)
+ create mode 100644 providers/libvirt/templates/active.xml
+ create mode 100644 providers/libvirt/templates/clock.xml
+ create mode 100644 providers/libvirt/templates/cpu.xml
+ create mode 100644 providers/libvirt/templates/devices.xml
+ create mode 100644 providers/libvirt/templates/disk.xml
+ create mode 100644 providers/libvirt/templates/domain.xml
+ create mode 100644 providers/libvirt/templates/emulator.xml
+ create mode 100644 providers/libvirt/templates/interface.xml
+ create mode 100644 providers/libvirt/templates/memory.xml
+ create mode 100644 providers/libvirt/templates/name.xml
+ create mode 100644 providers/libvirt/templates/options.yaml
+ create mode 100644 providers/libvirt/templates/os.xml
+ create mode 100644 providers/libvirt/templates/seclabel.xml
+ create mode 100644 providers/libvirt/templates/serial.xml
+
+diff --git a/providers/libvirt/templates/active.xml b/providers/libvirt/templates/active.xml
+new file mode 100644
+index 0000000..8ed7ee4
+--- /dev/null
++++ b/providers/libvirt/templates/active.xml
+@@ -0,0 +1,3 @@
++<on_poweroff>destroy</on_poweroff>
++<on_reboot>destroy</on_reboot>
++<on_crash>destroy</on_crash>
+diff --git a/providers/libvirt/templates/clock.xml b/providers/libvirt/templates/clock.xml
+new file mode 100644
+index 0000000..12d0ef8
+--- /dev/null
++++ b/providers/libvirt/templates/clock.xml
+@@ -0,0 +1,5 @@
++<clock offset='utc'>
++  <timer name='rtc' tickpolicy='catchup' track='guest'/>
++  <timer name='hpet' present='no'/>
++  <timer name='pit' tickpolicy='delay'/>
++</clock>
+diff --git a/providers/libvirt/templates/cpu.xml b/providers/libvirt/templates/cpu.xml
+new file mode 100644
+index 0000000..1f95dc6
+--- /dev/null
++++ b/providers/libvirt/templates/cpu.xml
+@@ -0,0 +1,3 @@
++<vcpu placement='static'><%= nr_cpu %></vcpu>
++<cpu mode='host-passthrough' check='none'>
++</cpu>
+diff --git a/providers/libvirt/templates/devices.xml b/providers/libvirt/templates/devices.xml
+new file mode 100644
+index 0000000..83cd847
+--- /dev/null
++++ b/providers/libvirt/templates/devices.xml
+@@ -0,0 +1,3 @@
++<devices>
++  <graphics type='vnc' autoport='yes' listen='0.0.0.0'><graphics>
++</devices>
+diff --git a/providers/libvirt/templates/disk.xml b/providers/libvirt/templates/disk.xml
+new file mode 100644
+index 0000000..7aecef0
+--- /dev/null
++++ b/providers/libvirt/templates/disk.xml
+@@ -0,0 +1,7 @@
++<% if disk %>
++<disk type='block' device='disk'>
++	<driver name='qemu' type='raw'/>
++	<source dev='<%= disk %>'/>
++	<target dev='vda' bus='virtio'/>
++</disk>
++<% end %>
+diff --git a/providers/libvirt/templates/domain.xml b/providers/libvirt/templates/domain.xml
+new file mode 100644
+index 0000000..a3fdb63
+--- /dev/null
++++ b/providers/libvirt/templates/domain.xml
+@@ -0,0 +1,10 @@
++<?xml version="1.0" character="utf-8"?>
++<domain type='kvm'>
++  <resource>
++    <partition>/machine</partition>
++  </resource>
++  <features>
++    <acpi/>
++    <gic version='3'/>
++  </features>
++</domain>
+diff --git a/providers/libvirt/templates/emulator.xml b/providers/libvirt/templates/emulator.xml
+new file mode 100644
+index 0000000..e915215
+--- /dev/null
++++ b/providers/libvirt/templates/emulator.xml
+@@ -0,0 +1 @@
++<emulator><%=qemu_path%></emulator>
+diff --git a/providers/libvirt/templates/interface.xml b/providers/libvirt/templates/interface.xml
+new file mode 100644
+index 0000000..5d4c04f
+--- /dev/null
++++ b/providers/libvirt/templates/interface.xml
+@@ -0,0 +1,6 @@
++<interface type='bridge'>
++  <source bridge='br0'/>
++  <mac address='<%= mac %>'/>
++  <target dev='vnet0'/>
++  <model type='virtio'/>
++</interface>
+diff --git a/providers/libvirt/templates/memory.xml b/providers/libvirt/templates/memory.xml
+new file mode 100644
+index 0000000..34aec49
+--- /dev/null
++++ b/providers/libvirt/templates/memory.xml
+@@ -0,0 +1 @@
++<memory unit='GiB'><%= memory.to_i %></memory>
+diff --git a/providers/libvirt/templates/name.xml b/providers/libvirt/templates/name.xml
+new file mode 100644
+index 0000000..5dc98f4
+--- /dev/null
++++ b/providers/libvirt/templates/name.xml
+@@ -0,0 +1 @@
++<name><%= job_id %></name>
+diff --git a/providers/libvirt/templates/options.yaml b/providers/libvirt/templates/options.yaml
+new file mode 100644
+index 0000000..c41ee29
+--- /dev/null
++++ b/providers/libvirt/templates/options.yaml
+@@ -0,0 +1,23 @@
++# Domain option:
++#  use templates/domain.xml if user not specified.
++domain: domain
++
++# Default options:
++#  these elements must be replaced for each domain.xml.
++default:
++        - name
++        - os
++        - memory
++        - serial
++        - interface
++        - active
++        - emulator
++
++# Replaceable options:
++#  these elements can be replaced by user configurations.
++replaceable:
++        - devices
++        - cpu
++        - seclabel
++        - disk
++        - clock
+diff --git a/providers/libvirt/templates/os.xml b/providers/libvirt/templates/os.xml
+new file mode 100644
+index 0000000..3ac880d
+--- /dev/null
++++ b/providers/libvirt/templates/os.xml
+@@ -0,0 +1,8 @@
++<os>
++  <type arch='<%= arch %>' machine='virt'>hvm</type>
++  <loader readonly='yes' type='pflash'>/usr/share/edk2/aarch64/QEMU_EFI-pflash.raw</loader>
++  <kernel><%= kernel %></kernel>
++  <initrd><%= initrd %></initrd>
++  <cmdline><%= cmdline %></cmdline>
++  <nvram>/var/lib/libvirt/qemu/nvram/<%= job_id %>.fd</nvram>
++</os>
+diff --git a/providers/libvirt/templates/seclabel.xml b/providers/libvirt/templates/seclabel.xml
+new file mode 100644
+index 0000000..5c10a77
+--- /dev/null
++++ b/providers/libvirt/templates/seclabel.xml
+@@ -0,0 +1,4 @@
++<seclabel type='dynamic' model='dac' relabel='yes'>
++  <label>+0:+0</label>
++  <imagelabel>+0:+0</imagelabel>
++</seclabel>
+diff --git a/providers/libvirt/templates/serial.xml b/providers/libvirt/templates/serial.xml
+new file mode 100644
+index 0000000..2edc882
+--- /dev/null
++++ b/providers/libvirt/templates/serial.xml
+@@ -0,0 +1,4 @@
++<serial type='file'>
++	<source path="<%= log_file %>"/>
++	<target port="0"/>
++</serial>
+-- 
+2.23.0
+
