@@ -11,6 +11,7 @@ require_relative "#{ENV['CCI_SRC']}/providers/lib/context"
 require_relative "#{ENV['CCI_SRC']}/providers/lib/resource"
 require_relative "#{ENV['CCI_SRC']}/providers/lib/domain"
 require_relative "#{ENV['CCI_SRC']}/providers/lib/libvirt"
+require_relative "#{ENV['CCI_SRC']}/providers/lib/upload"
 
 def create_logger(hostname)
   filename = "#{hostname}.log"
@@ -56,7 +57,8 @@ def parse_response(response, context, resource)
   context.merge!(resource.info)
 end
 
-def generate_domain(domain, logger)
+def generate_domain(context, logger)
+  domain = Domain.new(context, logger)
   xml_path = ''
   begin
     domain.generate
@@ -65,15 +67,29 @@ def generate_domain(domain, logger)
     logger.error(e)
     logger.error('please check your xml file format')
   ensure
-    # upload logger
-    puts 'upload logger'
+    upload_log(context)
   end
   return xml_path
 end
 
+def upload_log(context, upload_qemu_log: false)
+  id = context.info['job_id']
+  host = context.info['LKP_SERVER']
+  port = context.info['RESULT_WEBDAV_PORT']
+  result_root = context.info['result_root']
+  result_url = "http://#{host}:#{port}#{result_root}"
+  log_name = "#{context.info['hostname']}.log"
+  system "curl -sSf -T #{log_name} #{result_url}/ --cookie 'JOBID= #{id}'"
+  return unless upload_qemu_log
+
+  qemu_log_name = "/var/log/libvirt/qemu/#{id}.log"
+  return unless FileTest.exist?(qemu_log_name)
+
+  system "curl -sSf -T #{qemu_log_name} #{result_url}/ --cookie 'JOBID= #{id}'"
+end
+
 def start(context, logger, libvirt)
-  domain = Domain.new(context, logger)
-  xml_path = generate_domain(domain, logger)
+  xml_path = generate_domain(context, logger)
   return if xml_path.empty?
 
   begin
@@ -83,8 +99,7 @@ def start(context, logger, libvirt)
   rescue StandardError => e
     logger.error(e)
   ensure
-    # upload logger
-    puts 'upload logger'
+    upload_log(context, upload_qemu_log: true)
   end
 end
 
