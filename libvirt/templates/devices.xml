@@ -1,3 +1,3 @@
-<evices>
+<devices>
   <graphics type='vnc' autoport='yes' listen='0.0.0.0'><graphics>
 </devices>
