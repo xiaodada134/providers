@@ -11,7 +11,6 @@ require_relative "#{ENV['CCI_SRC']}/providers/lib/context"
 require_relative "#{ENV['CCI_SRC']}/providers/lib/resource"
 require_relative "#{ENV['CCI_SRC']}/providers/lib/domain"
 require_relative "#{ENV['CCI_SRC']}/providers/lib/libvirt"
-require_relative "#{ENV['CCI_SRC']}/providers/lib/upload"
 
 def create_logger(hostname)
   filename = "#{hostname}.log"
