@@ -8,7 +8,6 @@ require_relative './libvirt/run'
 tbox_group = 'vt-2p16g'
 hostname = "#{tbox_group}.#{ENV['USER']}-#{Process.pid}"
 # specify which queues will be request, use "," to separate more than 2 values
-#queues = "#{tbox_group}~#{ENV['USER']}"
-queues = "xsw"
+queues = "#{tbox_group}~#{ENV['USER']}"
 
 main(hostname, queues)

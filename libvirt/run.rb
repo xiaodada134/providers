@@ -122,3 +122,35 @@ def main(hostname, queues)
   start(context, logger, libvirt)
   clean(context, sched_client, libvirt)
 end
+
+def loop_main(hostname, queues)
+  loop do
+    begin
+      main(hostname, queues)
+    rescue StandardError => e
+      puts e.backtrace
+      # if an exception occurs, request the next time after 30 seconds
+      sleep 25
+    ensure
+      sleep 5
+    end
+  end
+end
+
+def save_pid(pids)
+  FileUtils.cd("#{ENV['CCI_SRC']}/providers")
+  f = File.new('vt.pid', 'a')
+  f.puts pids
+  f.close
+end
+
+def multi_libvirt(hostname, nr_vt, queues)
+  pids = []
+  nr_vt.to_i.times do |i|
+    pid = Process.fork do
+      loop_main("#{hostname}-#{i}", queues)
+    end
+    pids << pid
+  end
+  return pids
+end
