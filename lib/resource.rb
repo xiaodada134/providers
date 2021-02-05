@@ -56,7 +56,7 @@ class Resource
   end
 
   def load_file(url)
-    system "wget --timestamping --progress=bar:force #{url}"
+    system "wget --timestamping -a #{@hostname}.log --progress=bar:force #{url}"
     basename = File.basename(url)
     file_size = %x(ls -s --block-size=M "#{basename}").chomp
     @logger.info("Load file size: #{file_size}")
