@@ -148,7 +148,10 @@ def multi_libvirt(hostname, nr_vt, queues)
   pids = []
   nr_vt.to_i.times do |i|
     pid = Process.fork do
-      loop_main("#{hostname}-#{i}", queues)
+      seq_hostname = "#{hostname}-#{i}"
+      FileUtils.mkdir_p(seq_hostname) unless File.exist?(seq_hostname)
+      FileUtils.cd(seq_hostname)
+      loop_main(seq_hostname, queues)
     end
     pids << pid
   end

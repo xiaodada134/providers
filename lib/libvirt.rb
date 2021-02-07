@@ -21,9 +21,7 @@ class LibvirtConnect
   def wait
     loop do
       sleep 10
-      unless @dom.active?
-        break
-      end
+      break unless @dom.active?
     end
   end
 

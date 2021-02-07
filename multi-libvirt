@@ -39,7 +39,7 @@ options.parse!(ARGV)
 
 hostname = opt['hostname_prefix'] || "dc-1g.#{ENV['HOSTNAME']}"
 nr_vt = opt['nr_vt'] || 1
-queues = opt['queues'] || "dc-1g.#{ENV['HOSTNAME']}"
+queues = opt['queues'] || "vt-2p16g.#{ENV['HOSTNAME']}"
 
 pids = multi_libvirt(hostname, nr_vt, queues)
 save_pid pids
